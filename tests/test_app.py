@@ -3,7 +3,7 @@ from http import HTTPStatus
 import pytest
 from fastapi.testclient import TestClient
 
-from aula1.app import app
+from fast_zero.app import app
 
 
 @pytest.fixture()
