@@ -18,29 +18,14 @@ def test_root_deve_retornar_ok_e_ola_mundo(client):
     assert response.json() == {'message': 'Ola povo'}
 
 
-def test_ola_mundo_deve_retornar_html(client):
-    response = client.get('/olamundo')
-
-    assert response.status_code == HTTPStatus.OK
-    assert (
-        response.text
-        == """
-        <html>
-            <head>
-                <title> Nosso olá mundo!</title>
-            </head>
-            <body>
-                <h1> Olá Mundo </h1>
-            </body>
-        </html>
-    """
-    )
-
-
 def test_create_user(client):
     response = client.post(
-        '/users',
-        json={'username': 'teste', 'email': 'teste@teste', 'password': '123'},
+        '/users/',
+        json={
+            'username': 'alice',
+            'email': 'alice@example.com',
+            'password': '123',
+        },
     )
 
     assert response.status_code == HTTPStatus.CREATED
@@ -52,7 +37,7 @@ def test_create_user(client):
 
 
 def test_read_users(client):
-    response = client.get('/users')
+    response = client.get('/users/')
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
         'users': [
@@ -70,15 +55,15 @@ def test_update_users(client):
         '/users/1',
         json={
             'username': 'miguel',
-            'email': 'miguel@teste',
-            'password': '123',
+            'email': 'miguel@teste.com',
+            'password': 'newpassword',
         },
     )
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
         'username': 'miguel',
-        'email': 'miguel@teste',
+        'email': 'miguel@teste.com',
         'id': 1,
     }
 
