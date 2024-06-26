@@ -8,6 +8,10 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "3.12.*"
 fastapi = "^0.111.0"
+alembic = "^1.13.1"
+sqlacodegen-v2 = "^0.1.4"
+sqlalchemy = "^2.0.31"
+pydantic-settings = "^2.3.4"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -37,10 +41,10 @@ addopts = '-p no:warnings'
 
 [tool.taskipy.tasks]
 lint = 'ruff check . && ruff check . --diff'
-format = 'ruff check . --fix && ruff format .'
+format = 'ruff check . && ruff format .'
 run = 'fastapi dev aula1/app.py'
 pre_test = 'task lint'
-test = 'pytest --cov=aula1'
+test = 'pytest --cov=fast_zero'
 post_test = 'coverage html'
 
 
