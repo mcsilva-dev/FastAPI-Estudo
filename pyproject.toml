@@ -42,7 +42,7 @@ addopts = '-p no:warnings'
 [tool.taskipy.tasks]
 lint = 'ruff check . && ruff check . --diff'
 format = 'ruff check . && ruff format .'
-run = 'fastapi dev aula1/app.py'
+run = 'fastapi dev fast_zero/app.py'
 pre_test = 'task lint'
 test = 'pytest --cov=fast_zero'
 post_test = 'coverage html'

@@ -1,1 +1,7 @@
 Generic single-database configuration.
+
+## Criando banco com alembic
+
+apos criar um modelo com sqlalchemy para o banco de dados e hora de criar um modelo automatico com alembic 
+para isso utilize o comando\:
+> 
