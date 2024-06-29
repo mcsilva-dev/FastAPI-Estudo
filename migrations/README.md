@@ -1,4 +1,4 @@
-Generic single-database configuration.
+# Generic single-database configuration.
 
 ## Criando banco com alembic
 
