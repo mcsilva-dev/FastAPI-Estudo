@@ -13,8 +13,12 @@ app = FastAPI()
 
 @app.post('/users/', response_model=UserPublic, status_code=HTTPStatus.CREATED)
 def create_user(user: UserSchema, session: Session = Depends(get_session)):
-    check_user(user, session)
-
+    db_user = session.scalar(
+        select(User).where(
+            (User.username == user.username) | (User.email == user.email)
+        )
+    )
+    check_user(db_user, user, session)
     db_user = User(
         username=user.username, password=user.password, email=user.email
     )
@@ -25,16 +29,7 @@ def create_user(user: UserSchema, session: Session = Depends(get_session)):
     return db_user
 
 
-def get_dbUser(user, session):
-    return session.scalar(
-        select(User).where(
-            (User.username == user.username) | (User.email == user.email)
-        )
-    )
-
-
-def check_user(user, session):
-    db_user = get_dbUser(user, session)
+def check_user(db_user, user):
     if db_user:
         if db_user.username == user.username:
             raise HTTPException(
@@ -50,21 +45,14 @@ def check_user(user, session):
 
 
 def check_updateUser(user, session, user_id):
-    db_user = get_dbUser(user, session)
+    db_user = session.scalar(
+        select(User).where(
+            (User.username == user.username) | (User.email == user.email)
+        )
+    )
     if db_user.id == user_id:
         return db_user
-    else:
-        if db_user.username == user.username:
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail='Username already exists',
-            )
-        elif db_user.email == user.email:
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail='Email already exists',
-            )
-        return db_user
+    return check_user(db_user, user)
 
 
 @app.get('/users/', response_model=UserList)
