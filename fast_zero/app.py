@@ -18,7 +18,7 @@ def create_user(user: UserSchema, session: Session = Depends(get_session)):
             (User.username == user.username) | (User.email == user.email)
         )
     )
-    check_user(db_user, user, session)
+    check_user(db_user, user)
     db_user = User(
         username=user.username, password=user.password, email=user.email
     )
@@ -41,17 +41,6 @@ def check_user(db_user, user):
                 status_code=HTTPStatus.BAD_REQUEST,
                 detail='Email already exists',
             )
-
-
-def check_updateUser(user, session, user_id):
-    db_user = session.scalar(
-        select(User).where(
-            (User.username == user.username) | (User.email == user.email)
-        )
-    )
-    if db_user.id == user_id:
-        return
-    return check_user(db_user, user)
 
 
 @app.get('/users/', response_model=UserList)
@@ -79,7 +68,8 @@ def update_user(
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail='User not found'
         )
-    check_updateUser(user, session, user_id)
+    if db_user.id != user_id:
+        check_user(db_user, user)
     if (
         db_user.username == user.username
         and db_user.email == user.email
