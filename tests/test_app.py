@@ -8,7 +8,7 @@ def test_create_user(client):
             'username': 'alice',
             'email': 'alice@example.com',
             'password': '123',
-        }
+        },
     )
 
     assert response.status_code == HTTPStatus.CREATED
