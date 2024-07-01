@@ -41,7 +41,6 @@ def check_user(db_user, user):
                 status_code=HTTPStatus.BAD_REQUEST,
                 detail='Email already exists',
             )
-    return db_user
 
 
 def check_updateUser(user, session, user_id):
