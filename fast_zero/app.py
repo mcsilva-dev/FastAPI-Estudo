@@ -51,7 +51,7 @@ def check_updateUser(user, session, user_id):
         )
     )
     if db_user.id == user_id:
-        return db_user
+        return
     return check_user(db_user, user)
 
 
