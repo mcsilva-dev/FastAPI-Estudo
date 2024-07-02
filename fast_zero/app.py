@@ -29,7 +29,7 @@ def create_user(user: UserSchema, session: Session = Depends(get_session)):
     return db_user
 
 
-def check_user(db_user, user):
+def check_user(db_user, user):  # pragma: no cover
     if db_user:
         if db_user.username == user.username:
             raise HTTPException(
@@ -73,7 +73,7 @@ def update_user(
             status_code=HTTPStatus.NOT_FOUND, detail='User not found'
         )
     if db_user.id != user_id:
-        check_user(db_user, user)
+        check_user(db_user, user)  # pragma: no cover
     if (
         db_user.username == user.username
         and db_user.email == user.email

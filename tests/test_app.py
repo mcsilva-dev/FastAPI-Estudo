@@ -57,6 +57,19 @@ def test_update_user_exception(client):
     assert response.json() == {'detail': 'User not found'}
 
 
+def test_update_no_changes(client, user):
+    response = client.put(
+        '/users/1',
+        json={
+            'username': 'teste',
+            'email': 'teste@teste.com',
+            'password': '123',
+        }
+    )
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json() == {'detail': 'No changes were made'}
+
+
 def test_update_users(client, user):
     response = client.put(
         '/users/1',
