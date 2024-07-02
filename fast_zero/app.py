@@ -44,9 +44,11 @@ def check_user(db_user, user):
 
 
 @app.get('/users/', response_model=UserList)
-def read_users(session: Session = Depends(get_session)):
-    db_users = session.scalars(select(User))
-    return {'users': db_users.fetchall()}
+def read_users(
+    limit: int = 10, skip: int = 0, session: Session = Depends(get_session)
+):
+    db_users = session.scalars(select(User).limit(limit).offset(skip))
+    return {'users': db_users}
 
 
 @app.get('/users/{user_id}', response_model=UserPublic)
