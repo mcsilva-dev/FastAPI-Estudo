@@ -3,10 +3,12 @@ from http import HTTPStatus
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordRequestForm
 
 from fast_zero.database import get_session
 from fast_zero.models import User
 from fast_zero.schemas import Message, UserList, UserPublic, UserSchema
+from fast_zero.security import get_password_hash, verify_password_hash
 
 app = FastAPI()
 
@@ -20,7 +22,9 @@ def create_user(user: UserSchema, session: Session = Depends(get_session)):
     )
     check_user(db_user, user)
     db_user = User(
-        username=user.username, password=user.password, email=user.email
+        username=user.username,
+        password=get_password_hash(user.password),
+        email=user.email,
     )
     session.add(db_user)
     session.commit()
@@ -45,9 +49,7 @@ def check_user(db_user, user):  # pragma: no cover
 
 @app.get('/users/', response_model=UserList)
 def read_users(
-    limit: int = 10,
-    skip: int = 0,
-    session: Session = Depends(get_session)
+    limit: int = 10, skip: int = 0, session: Session = Depends(get_session)
 ):
     db_users = session.scalars(select(User).limit(limit).offset(skip))
     return {'users': db_users}
@@ -85,7 +87,7 @@ def update_user(
         )
     db_user.username = user.username
     db_user.email = user.email
-    db_user.password = user.password
+    db_user.password = get_password_hash(user.password)
     session.commit()
     session.refresh(db_user)
     return db_user
@@ -101,3 +103,22 @@ def delete_user(user_id: int, session: Session = Depends(get_session)):
     session.delete(db_user)
     session.commit()
     return {'message': 'User deleted'}
+
+
+@app.post('/token')
+def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session: Session = Depends(get_session)
+):
+    user = session.scalar(select(User).where(User.username == form_data.username))
+
+    if not user:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail='Incorrect username or password',
+        )
+    if not verify_password_hash(form_data.password, user.password):
+        raise HTTPException(
+            status_code=HTTPStatus.UNAUTHORIZED,
+            detail='Incorrect username or password',
+        )

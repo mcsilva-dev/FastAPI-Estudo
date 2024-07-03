@@ -25,9 +25,7 @@ def test_read_users_with_users(client, user):
     user_schema = UserPublic.validate(user).model_dump()
     response = client.get('/users/')
     assert response.status_code == HTTPStatus.OK
-    assert response.json() == {
-        'users': [user_schema]
-    }
+    assert response.json() == {'users': [user_schema]}
 
 
 def test_get_user(client, user):
@@ -64,7 +62,7 @@ def test_update_no_changes(client, user):
             'username': 'teste',
             'email': 'teste@teste.com',
             'password': '123',
-        }
+        },
     )
     assert response.status_code == HTTPStatus.BAD_REQUEST
     assert response.json() == {'detail': 'No changes were made'}
