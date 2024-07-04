@@ -1,9 +1,9 @@
 from http import HTTPStatus
 
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from fastapi.security import OAuth2PasswordRequestForm
 
 from fast_zero.database import get_session
 from fast_zero.models import User
@@ -108,9 +108,11 @@ def delete_user(user_id: int, session: Session = Depends(get_session)):
 @app.post('/token')
 def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
-    user = session.scalar(select(User).where(User.username == form_data.username))
+    user = session.scalar(
+        select(User).where(User.username == form_data.username)
+    )
 
     if not user:
         raise HTTPException(
