@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from fast_zero.database import get_session
 from fast_zero.models import User
-from fast_zero.schemas import Message, UserList, UserPublic, UserSchema
+from fast_zero.schemas import Message, Token, UserList, UserPublic, UserSchema
 from fast_zero.security import get_password_hash, verify_password_hash
 
 app = FastAPI()
@@ -79,7 +79,7 @@ def update_user(
     if (
         db_user.username == user.username
         and db_user.email == user.email
-        and db_user.password == user.password
+        and verify_password_hash(user.password, db_user.password)
     ):
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
@@ -105,7 +105,7 @@ def delete_user(user_id: int, session: Session = Depends(get_session)):
     return {'message': 'User deleted'}
 
 
-@app.post('/token')
+@app.post('/token', response_model=Token)
 def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_session),
@@ -114,13 +114,8 @@ def login_for_access_token(
         select(User).where(User.username == form_data.username)
     )
 
-    if not user:
+    if not verify_password_hash(form_data.password, user.password) or not user:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            detail='Incorrect username or password',
-        )
-    if not verify_password_hash(form_data.password, user.password):
-        raise HTTPException(
-            status_code=HTTPStatus.UNAUTHORIZED,
             detail='Incorrect username or password',
         )
