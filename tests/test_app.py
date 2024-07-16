@@ -21,27 +21,27 @@ def test_create_user(client):
     }
 
 
-def test_read_users_with_users(client, user):
-    user_schema = UserPublic.model_validate(user).model_dump()
+def test_read_users_with_users(client, current_user):
+    user_schema = UserPublic.model_validate(current_user).model_dump()
     response = client.get('/users/')
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'users': [user_schema]}
 
 
-def test_get_user(client, user):
-    user_schema = UserPublic.model_validate(user).model_dump()
-    response = client.get(f'/users/{user.id}')
+def test_get_user(client, current_user):
+    user_schema = UserPublic.model_validate(current_user).model_dump()
+    response = client.get(f'/users/{current_user.id}')
     assert response.status_code == HTTPStatus.OK
     assert response.json() == user_schema
 
 
-def test_get_user_exception(client):
+def test_get_user_exception(client, current_user):
     response = client.get('/users/2')
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'User not found'}
 
 
-def test_update_user_exception(client):
+def test_update_user_exception(client, current_user):
     response = client.put(
         '/users/2',
         json={
@@ -55,29 +55,29 @@ def test_update_user_exception(client):
     assert response.json() == {'detail': 'User not found'}
 
 
-def test_update_no_changes(client, user):
+def test_update_no_changes(client, current_user):
     response = client.put(
         '/users/1',
         json={
-            'username': user.username,
-            'email': user.email,
-            'password': user.clean_password,
+            'username': current_user.username,
+            'email': current_user.email,
+            'password': current_user.clean_password,
         },
     )
     assert response.status_code == HTTPStatus.BAD_REQUEST
     assert response.json() == {'detail': 'No changes were made'}
 
 
-def test_update_users(client, user):
+def test_update_users(client, current_user):
     response = client.put(
-        f'/users/{user.id}',
+        f'/users/{current_user.id}',
         json={
             'username': 'miguel',
             'email': 'miguel@newemail.com',
             'password': 'newpassword',
         },
     )
-    UserPublic.model_validate(user).model_dump()
+    UserPublic.model_validate(current_user).model_dump()
 
     assert response.status_code == HTTPStatus.OK
 
@@ -100,12 +100,12 @@ def test_get_token(client, user):
     assert token['access_token']
 
 
-def test_get_token_exception(client, user):
+def test_get_token_exception(client, current_user):
     response = client.post(
         '/token',
         data={
-            'username': user.username,
-            'password': user.clean_password + '1',
+            'username': current_user.username,
+            'password': current_user.clean_password + '1',
         },
     )
 
@@ -113,13 +113,13 @@ def test_get_token_exception(client, user):
     assert response.json() == {'detail': 'Incorrect username or password'}
 
 
-def test_delete_users_exception(client):
+def test_delete_users_exception(client, current_user):
     response = client.delete('/users/2')
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'User not found'}
 
 
-def test_delete_users(client, user):
-    response = client.delete(f'/users/{user.id}')
+def test_delete_users(client, current_user):
+    response = client.delete(f'/users/{current_user.id}')
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'User deleted'}

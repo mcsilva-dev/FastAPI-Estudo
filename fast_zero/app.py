@@ -10,6 +10,7 @@ from fast_zero.models import User
 from fast_zero.schemas import Message, Token, UserList, UserPublic, UserSchema
 from fast_zero.security import (
     create_access_token,
+    get_current_user,
     get_password_hash,
     verify_password_hash,
 )
@@ -53,14 +54,22 @@ def check_user(db_user, user):  # pragma: no cover
 
 @app.get('/users/', response_model=UserList)
 def read_users(
-    limit: int = 10, skip: int = 0, session: Session = Depends(get_session)
+    limit: int = 10,
+    skip: int = 0,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
 ):
+    current_user
     db_users = session.scalars(select(User).limit(limit).offset(skip))
     return {'users': db_users}
 
 
 @app.get('/users/{user_id}', response_model=UserPublic)
-def get_user(user_id: int, session: Session = Depends(get_session)):
+def get_user(
+    user_id: int,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
     db_user = session.scalar(select(User).where(User.id == user_id))
     if not db_user:
         raise HTTPException(
@@ -71,7 +80,10 @@ def get_user(user_id: int, session: Session = Depends(get_session)):
 
 @app.put('/users/{user_id}', response_model=UserPublic)
 def update_user(
-    user_id: int, user: UserSchema, session: Session = Depends(get_session)
+    user_id: int,
+    user: UserSchema,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
 ):
     db_user = session.scalar(select(User).where(User.id == user_id))
     if not db_user:
@@ -98,7 +110,11 @@ def update_user(
 
 
 @app.delete('/users/{user_id}', response_model=Message)
-def delete_user(user_id: int, session: Session = Depends(get_session)):
+def delete_user(
+    user_id: int,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
     db_user = session.scalar(select(User).where(User.id == user_id))
     if not db_user:
         raise HTTPException(
