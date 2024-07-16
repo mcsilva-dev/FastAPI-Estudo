@@ -37,12 +37,15 @@ def session():
 
 @pytest.fixture()
 def user(session):
+    pwd = '123'
     user = User(
         username='teste',
         email='teste@teste.com',
-        password=get_password_hash('123'),
+        password=get_password_hash(pwd),
     )
     session.add(user)
     session.commit()
     session.refresh(user)
+
+    user.clean_password = pwd
     return user

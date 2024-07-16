@@ -30,7 +30,7 @@ def test_read_users_with_users(client, user):
 
 def test_get_user(client, user):
     user_schema = UserPublic.model_validate(user).model_dump()
-    response = client.get('/users/1')
+    response = client.get(f'/users/{user.id}')
     assert response.status_code == HTTPStatus.OK
     assert response.json() == user_schema
 
@@ -59,9 +59,9 @@ def test_update_no_changes(client, user):
     response = client.put(
         '/users/1',
         json={
-            'username': 'teste',
-            'email': 'teste@teste.com',
-            'password': '123',
+            'username': user.username,
+            'email': user.email,
+            'password': user.clean_password,
         },
     )
     assert response.status_code == HTTPStatus.BAD_REQUEST
@@ -70,7 +70,7 @@ def test_update_no_changes(client, user):
 
 def test_update_users(client, user):
     response = client.put(
-        '/users/1',
+        f'/users/{user.id}',
         json={
             'username': 'miguel',
             'email': 'miguel@newemail.com',
@@ -82,6 +82,37 @@ def test_update_users(client, user):
     assert response.status_code == HTTPStatus.OK
 
 
+def test_get_token(client, user):
+    response = client.post(
+        '/token',
+        data={
+            'username': user.username,
+            'password': user.clean_password,
+        },
+    )
+
+    token = response.json()
+
+    assert response.status_code == HTTPStatus.OK
+
+    assert token['token_type'] == 'Bearer'
+
+    assert token['access_token']
+
+
+def test_get_token_exception(client, user):
+    response = client.post(
+        '/token',
+        data={
+            'username': user.username,
+            'password': user.clean_password + '1',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json() == {'detail': 'Incorrect username or password'}
+
+
 def test_delete_users_exception(client):
     response = client.delete('/users/2')
     assert response.status_code == HTTPStatus.NOT_FOUND
@@ -89,6 +120,6 @@ def test_delete_users_exception(client):
 
 
 def test_delete_users(client, user):
-    response = client.delete('/users/1')
+    response = client.delete(f'/users/{user.id}')
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'User deleted'}

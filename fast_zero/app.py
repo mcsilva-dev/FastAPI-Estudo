@@ -8,7 +8,11 @@ from sqlalchemy.orm import Session
 from fast_zero.database import get_session
 from fast_zero.models import User
 from fast_zero.schemas import Message, Token, UserList, UserPublic, UserSchema
-from fast_zero.security import get_password_hash, verify_password_hash
+from fast_zero.security import (
+    create_access_token,
+    get_password_hash,
+    verify_password_hash,
+)
 
 app = FastAPI()
 
@@ -119,3 +123,6 @@ def login_for_access_token(
             status_code=HTTPStatus.BAD_REQUEST,
             detail='Incorrect username or password',
         )
+
+    access_token = create_access_token(data={'sub': user.username})
+    return {'access_token': access_token, 'token_type': 'Bearer'}
