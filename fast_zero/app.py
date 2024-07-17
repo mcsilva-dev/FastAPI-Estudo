@@ -59,7 +59,6 @@ def read_users(
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
 ):
-    current_user
     db_users = session.scalars(select(User).limit(limit).offset(skip))
     return {'users': db_users}
 
@@ -85,28 +84,26 @@ def update_user(
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
 ):
-    db_user = session.scalar(select(User).where(User.id == user_id))
-    if not db_user:
+    if current_user.id != user_id:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='User not found'
+            status_code=HTTPStatus.FORBIDDEN,
+            detail='You do not have permission to update this user',
         )
-    if db_user.id != user_id:
-        check_user(db_user, user)  # pragma: no cover
     if (
-        db_user.username == user.username
-        and db_user.email == user.email
-        and verify_password_hash(user.password, db_user.password)
+        current_user.username == user.username
+        and current_user.email == user.email
+        and verify_password_hash(user.password, current_user.password)
     ):
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail='No changes were made',
         )
-    db_user.username = user.username
-    db_user.email = user.email
-    db_user.password = get_password_hash(user.password)
+    current_user.username = user.username
+    current_user.email = user.email
+    current_user.password = get_password_hash(user.password)
     session.commit()
-    session.refresh(db_user)
-    return db_user
+    session.refresh(current_user)
+    return current_user
 
 
 @app.delete('/users/{user_id}', response_model=Message)
@@ -115,12 +112,12 @@ def delete_user(
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
 ):
-    db_user = session.scalar(select(User).where(User.id == user_id))
-    if not db_user:
+    if current_user.id != user_id:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='User not found'
+            status_code=HTTPStatus.FORBIDDEN,
+            detail='You do not have permission to delete this user',
         )
-    session.delete(db_user)
+    session.delete(current_user)
     session.commit()
     return {'message': 'User deleted'}
 
@@ -134,7 +131,13 @@ def login_for_access_token(
         select(User).where(User.username == form_data.username)
     )
 
-    if not verify_password_hash(form_data.password, user.password) or not user:
+    if not user:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail='Incorrect username or password',
+        )
+
+    if not verify_password_hash(form_data.password, user.password):
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail='Incorrect username or password',

@@ -21,27 +21,35 @@ def test_create_user(client):
     }
 
 
-def test_read_users_with_users(client, current_user):
-    user_schema = UserPublic.model_validate(current_user).model_dump()
-    response = client.get('/users/')
+def test_read_users_with_users(client, user, token):
+    user_schema = UserPublic.model_validate(user).model_dump()
+    response = client.get(
+        '/users/',
+        headers={'Authorization': f'Bearer {token}'},
+    )
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'users': [user_schema]}
 
 
-def test_get_user(client, current_user):
-    user_schema = UserPublic.model_validate(current_user).model_dump()
-    response = client.get(f'/users/{current_user.id}')
+def test_get_user(client, user, token):
+    user_schema = UserPublic.model_validate(user).model_dump()
+    response = client.get(
+        f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
     assert response.status_code == HTTPStatus.OK
     assert response.json() == user_schema
 
 
-def test_get_user_exception(client, current_user):
-    response = client.get('/users/2')
+def test_get_user_exception(client, token):
+    response = client.get(
+        '/users/2', headers={'Authorization': f'Bearer {token}'}
+    )
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'User not found'}
 
 
-def test_update_user_exception(client, current_user):
+def test_update_user_exception(client, token):
     response = client.put(
         '/users/2',
         json={
@@ -49,35 +57,40 @@ def test_update_user_exception(client, current_user):
             'email': 'miguel@teste.com',
             'password': 'newpassword',
         },
+        headers={'Authorization': f'Bearer {token}'},
     )
 
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {
+        'detail': 'You do not have permission to update this user'
+    }
 
 
-def test_update_no_changes(client, current_user):
+def test_update_no_changes(client, user, token):
     response = client.put(
         '/users/1',
         json={
-            'username': current_user.username,
-            'email': current_user.email,
-            'password': current_user.clean_password,
+            'username': user.username,
+            'email': user.email,
+            'password': user.clean_password,
         },
+        headers={'Authorization': f'Bearer {token}'},
     )
     assert response.status_code == HTTPStatus.BAD_REQUEST
     assert response.json() == {'detail': 'No changes were made'}
 
 
-def test_update_users(client, current_user):
+def test_update_users(client, user, token):
     response = client.put(
-        f'/users/{current_user.id}',
+        f'/users/{user.id}',
         json={
             'username': 'miguel',
             'email': 'miguel@newemail.com',
             'password': 'newpassword',
         },
+        headers={'Authorization': f'Bearer {token}'},
     )
-    UserPublic.model_validate(current_user).model_dump()
+    UserPublic.model_validate(user).model_dump()
 
     assert response.status_code == HTTPStatus.OK
 
@@ -100,12 +113,12 @@ def test_get_token(client, user):
     assert token['access_token']
 
 
-def test_get_token_exception(client, current_user):
+def test_get_token_exception(client, user):
     response = client.post(
         '/token',
         data={
-            'username': current_user.username,
-            'password': current_user.clean_password + '1',
+            'username': user.username,
+            'password': user.clean_password + '1',
         },
     )
 
@@ -113,13 +126,19 @@ def test_get_token_exception(client, current_user):
     assert response.json() == {'detail': 'Incorrect username or password'}
 
 
-def test_delete_users_exception(client, current_user):
-    response = client.delete('/users/2')
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
+def test_delete_users_exception(client, token):
+    response = client.delete(
+        '/users/2', headers={'Authorization': f'Bearer {token}'}
+    )
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {
+        'detail': 'You do not have permission to delete this user'
+    }
 
 
-def test_delete_users(client, current_user):
-    response = client.delete(f'/users/{current_user.id}')
+def test_delete_users(client, user, token):
+    response = client.delete(
+        f'/users/{user.id}', headers={'Authorization': f'Bearer {token}'}
+    )
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'User deleted'}

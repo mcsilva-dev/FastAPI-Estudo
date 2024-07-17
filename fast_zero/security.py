@@ -4,6 +4,7 @@ from http import HTTPStatus
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jwt import decode, encode
+from jwt.exceptions import PyJWTError
 from pwdlib import PasswordHash
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import select
@@ -45,16 +46,20 @@ def get_current_user(
     session: Session = Depends(get_session),
     token: str = Depends(oauth2_scheme),
 ):
-    payload = decode(
-        token, Settings().SECRET_KEY, algorithms=[Settings().ALGORITHM]
-    )
+    try:
+        payload = decode(
+            token, Settings().SECRET_KEY, algorithms=[Settings().ALGORITHM]
+        )
 
-    username: str = payload.get('sub')
+        username: str = payload.get('sub')
 
-    user_db = session.scalar(select(User).where(User.username == username))
-    if not user_db:
+        user_db = session.scalar(select(User).where(User.username == username))
+        if not user_db:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED, detail='Invalid token'
+            )
+    except PyJWTError:
         raise HTTPException(
             status_code=HTTPStatus.UNAUTHORIZED, detail='Invalid token'
         )
-    
     return user_db
