@@ -128,7 +128,7 @@ def login_for_access_token(
     session: Session = Depends(get_session),
 ):
     user = session.scalar(
-        select(User).where(User.username == form_data.username)
+        select(User).where(User.email == form_data.username)
     )
 
     if not user:
