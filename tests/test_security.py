@@ -8,7 +8,7 @@ from fast_zero.security import (
 from fast_zero.settings import Settings
 
 
-def test_security():
+def test_get_password_hash():
     password = '123'
     hash_password = get_password_hash(password)
     assert verify_password_hash(password, hash_password) is True

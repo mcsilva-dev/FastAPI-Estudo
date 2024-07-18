@@ -4,7 +4,7 @@ from http import HTTPStatus
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jwt import decode, encode
-from jwt.exceptions import PyJWTError
+from jwt.exceptions import DecodeError
 from pwdlib import PasswordHash
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import select
@@ -46,6 +46,11 @@ def get_current_user(
     session: Session = Depends(get_session),
     token: str = Depends(oauth2_scheme),
 ):
+    credentials_exception = HTTPException(
+        status_code=HTTPStatus.UNAUTHORIZED,
+        detail='Invalid credentials',
+        headers={'WWW-Authenticate': 'Bearer'},
+    )
     try:
         payload = decode(
             token, Settings().SECRET_KEY, algorithms=[Settings().ALGORITHM]
@@ -53,13 +58,11 @@ def get_current_user(
 
         username: str = payload.get('sub')
 
-        user_db = session.scalar(select(User).where(User.username == username))
-        if not user_db:
-            raise HTTPException(
-                status_code=HTTPStatus.UNAUTHORIZED, detail='Invalid token'
-            )
-    except PyJWTError:
-        raise HTTPException(
-            status_code=HTTPStatus.UNAUTHORIZED, detail='Invalid token'
-        )
-    return user_db
+        if not username:
+            raise credentials_exception
+    except (DecodeError, HTTPException):
+        raise credentials_exception
+    user = session.scalar(select(User).where(User.username == username))
+    if not user:
+        raise credentials_exception
+    return user

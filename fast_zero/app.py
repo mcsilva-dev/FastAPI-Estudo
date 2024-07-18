@@ -25,20 +25,6 @@ def create_user(user: UserSchema, session: Session = Depends(get_session)):
             (User.username == user.username) | (User.email == user.email)
         )
     )
-    check_user(db_user, user)
-    db_user = User(
-        username=user.username,
-        password=get_password_hash(user.password),
-        email=user.email,
-    )
-    session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
-
-    return db_user
-
-
-def check_user(db_user, user):  # pragma: no cover
     if db_user:
         if db_user.username == user.username:
             raise HTTPException(
@@ -50,6 +36,16 @@ def check_user(db_user, user):  # pragma: no cover
                 status_code=HTTPStatus.BAD_REQUEST,
                 detail='Email already exists',
             )
+    db_user = User(
+        username=user.username,
+        password=get_password_hash(user.password),
+        email=user.email,
+    )
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
+
+    return db_user
 
 
 @app.get('/users/', response_model=UserList)
@@ -127,17 +123,9 @@ def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_session),
 ):
-    user = session.scalar(
-        select(User).where(User.email == form_data.username)
-    )
+    user = session.scalar(select(User).where(User.email == form_data.username))
 
-    if not user:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail='Incorrect username or password',
-        )
-
-    if not verify_password_hash(form_data.password, user.password):
+    if not user or not verify_password_hash(form_data.password, user.password):
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail='Incorrect username or password',
