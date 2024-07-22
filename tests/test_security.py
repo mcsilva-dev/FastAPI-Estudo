@@ -7,7 +7,7 @@ from fast_zero.security import (
     get_password_hash,
     verify_password_hash,
 )
-from fast_zero.settings import Settings
+from fast_zero.settings import settings
 
 
 def test_get_password_hash():
@@ -22,7 +22,7 @@ def test_jwt():
     token = create_access_token(data)
 
     decoded = decode(
-        token, Settings().SECRET_KEY, algorithms=[Settings().ALGORITHM]
+        token, settings().SECRET_KEY, algorithms=[settings().ALGORITHM]
     )
 
     assert decoded['test'] == data['test']
