@@ -33,12 +33,12 @@ def create_user(user: UserSchema, session: T_Session):
     if db_user:
         if db_user.username == user.username:
             raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
+                status_code=HTTPStatus.FORBIDDEN,
                 detail='Username already exists',
             )
         elif db_user.email == user.email:
             raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
+                status_code=HTTPStatus.FORBIDDEN,
                 detail='Email already exists',
             )
     db_user = User(
@@ -92,7 +92,7 @@ def update_user(
         and verify_password_hash(user.password, current_user.password)
     ):
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
+            status_code=HTTPStatus.FORBIDDEN,
             detail='No changes were made',
         )
     current_user.username = user.username

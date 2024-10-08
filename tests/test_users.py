@@ -25,12 +25,12 @@ def test_create_user_already_username_exist(client, user):
     response = client.post(
         '/users/',
         json={
-            'username': 'teste',
-            'email': 'teste@test.com',
+            'username': 'user0',
+            'email': 'user0@test.com',
             'password': '123',
         },
     )
-    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.status_code == HTTPStatus.FORBIDDEN
     assert response.json() == {'detail': 'Username already exists'}
 
 
@@ -38,12 +38,12 @@ def test_create_user_already_email_exist(client, user):
     response = client.post(
         '/users/',
         json={
-            'username': 'newtest',
-            'email': 'teste@teste.com',
+            'username': 'alice',
+            'email': 'user0@test.com',
             'password': '123',
         },
     )
-    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.status_code == HTTPStatus.FORBIDDEN
     assert response.json() == {'detail': 'Email already exists'}
 
 
@@ -67,17 +67,17 @@ def test_get_user(client, user, token):
     assert response.json() == user_schema
 
 
-def test_get_user_exception(client, token):
+def test_get_user_exception(client, token, user):
     response = client.get(
-        '/users/2', headers={'Authorization': f'Bearer {token}'}
+        f'/users/{user.id + 1}', headers={'Authorization': f'Bearer {token}'}
     )
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'User not found'}
 
 
-def test_update_user_exception(client, token):
+def test_update_user_exception(client, token, other_user):
     response = client.put(
-        '/users/2',
+        f'/users/{other_user.id}',
         json={
             'username': 'miguel',
             'email': 'miguel@teste.com',
@@ -94,7 +94,7 @@ def test_update_user_exception(client, token):
 
 def test_update_no_changes(client, user, token):
     response = client.put(
-        '/users/1',
+        f'/users/{user.id}',
         json={
             'username': user.username,
             'email': user.email,
@@ -102,7 +102,7 @@ def test_update_no_changes(client, user, token):
         },
         headers={'Authorization': f'Bearer {token}'},
     )
-    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.status_code == HTTPStatus.FORBIDDEN
     assert response.json() == {'detail': 'No changes were made'}
 
 
@@ -121,9 +121,9 @@ def test_update_users(client, user, token):
     assert response.status_code == HTTPStatus.OK
 
 
-def test_delete_users_exception(client, token):
+def test_delete_users_exception(client, token, other_user):
     response = client.delete(
-        '/users/2', headers={'Authorization': f'Bearer {token}'}
+        f'/users/{other_user.id}', headers={'Authorization': f'Bearer {token}'}
     )
     assert response.status_code == HTTPStatus.FORBIDDEN
     assert response.json() == {
